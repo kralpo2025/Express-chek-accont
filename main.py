@@ -30,7 +30,7 @@ from Crypto.Random import get_random_bytes
 from asn1crypto import cms, x509, keys
 
 # --- CONFIGURATION ---
-BOT_TOKEN = "8052532193:AAFz3V8ztDNcdCpfOyhi1bxm7XiJh8OJJCU"
+BOT_TOKEN = "8457154975:AAFIwf-zuCFQ0V7p1oUwJNmTKLV6-ReChe4"
 AI_API_URL = "http://cactus-dev.ir/v1/grok.php"
 
 # تنظیمات زمانی
