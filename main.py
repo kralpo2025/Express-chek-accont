@@ -31,7 +31,7 @@ from asn1crypto import cms, x509, keys
 
 # --- CONFIGURATION ---
 BOT_TOKEN = "8457154975:AAFIwf-zuCFQ0V7p1oUwJNmTKLV6-ReChe4"
-AI_API_URL = "https://mionapi.ir/api/ai/gemini.php?q="
+AI_API_URL = "https://api.kralp.workers.dev"
 
 # تنظیمات زمانی
 CHECK_TIMEOUT = 20
@@ -346,7 +346,7 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
     if not user_text:
         return
 
-    status_msg = await update.message.reply_text("🧠 <b>در حال پردازش هوش مصنوعی (Grok) و مرتب‌سازی...</b>", parse_mode=ParseMode.HTML)
+    status_msg = await update.message.reply_text("🧠 <b>در حال پردازش هوش مصنوعی (KRAL ai) و مرتب‌سازی...</b>", parse_mode=ParseMode.HTML)
 
     try:
         sorted_accounts = await asyncio.to_thread(call_ai_sorter, user_text)
