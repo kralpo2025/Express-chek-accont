@@ -31,7 +31,7 @@ from asn1crypto import cms, x509, keys
 
 # --- CONFIGURATION ---
 BOT_TOKEN = "8457154975:AAFIwf-zuCFQ0V7p1oUwJNmTKLV6-ReChe4"
-AI_API_URL = "http://cactus-dev.ir/v1/grok.php"
+AI_API_URL = "https://mionapi.ir/api/ai/gemini.php?q="
 
 # تنظیمات زمانی
 CHECK_TIMEOUT = 20
