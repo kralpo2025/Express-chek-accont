@@ -31,7 +31,7 @@ from asn1crypto import cms, x509, keys
 
 # --- CONFIGURATION ---
 BOT_TOKEN = "8457154975:AAFIwf-zuCFQ0V7p1oUwJNmTKLV6-ReChe4"
-AI_API_URL = "https://api.kralp.workers.dev"
+AI_API_URL = "https://api.kralp.workers.dev/"
 
 # تنظیمات زمانی
 CHECK_TIMEOUT = 20
