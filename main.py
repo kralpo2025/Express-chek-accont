@@ -30,7 +30,7 @@ from Crypto.Random import get_random_bytes
 from asn1crypto import cms, x509, keys
 
 # --- CONFIGURATION ---
-BOT_TOKEN = "8457154975:AAFIwf-zuCFQ0V7p1oUwJNmTKLV6-ReChe4"
+BOT_TOKEN = "9127443155:AAFi4_KwCPQDhF_epfC1V4lVYEDYj1T0rDM"
 AI_API_URL = "https://api.kralp.workers.dev/v1/grok.php"
 
 # تنظیمات زمانی
